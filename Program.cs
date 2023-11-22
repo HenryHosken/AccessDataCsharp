@@ -4,7 +4,7 @@ using Microsoft.Data.SqlClient;
 
 namespace BaltaDataAccess
 {
-    internal class Program
+    class Program
     {
         static void Main(string[] args)
         {
@@ -12,12 +12,55 @@ namespace BaltaDataAccess
 
             using (var connection = new SqlConnection(connectionString))
             {
-                var categories = connection.Query<Category>("SELECT [Id], [Title] FROM [Category]");
-                foreach (var category in categories)
-                {
-                    Console.WriteLine($"{category.Id} - {category.Title}");
-                }
+
             }
+        }
+
+        static void ListCategories(SqlConnection connection)
+        {
+            var categories = connection.Query<Category>("SELECT [Id], [Title] FROM [Category]");
+            foreach (var item in categories)
+            {
+                Console.WriteLine($"{item.Id} - {item.Title}");
+            }
+
+        }
+
+        static void CreateCategory(SqlConnection connection)
+        {
+            var category = new Category();
+            category.Id = Guid.NewGuid();
+            category.Title = "Amazon AWS";
+            category.Url = "amazon";
+            category.Description = "Categoria de serviços do AWS";
+            category.Order = 8;
+            category.Summary = "AWS Cloud";
+            category.Featured = false;
+
+            // SQL Injection
+
+            var insertSql = @"INSERT INTO 
+                    [Category] 
+                VALUES(
+                    @Id,    
+                    @Title,
+                    @Url,
+                    @Summary, 
+                    @Order,  
+                    @Description,
+                    @Featured)";
+
+            var rows = connection.Execute(insertSql, new
+            {
+                category.Id,
+                category.Title,
+                category.Url,
+                category.Summary,
+                category.Order,
+                category.Description,
+                category.Featured
+            });
+            Console.WriteLine($"{rows} linhas inseridas");
         }
     }
 }
