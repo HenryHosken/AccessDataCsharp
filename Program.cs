@@ -19,6 +19,7 @@ namespace BaltaDataAccess
                 //DeleteCategory(connection);
                 //GetCategory(connection);
                 //ExecuteReadProcedure(connection);
+                ExecuteScalar(connection);
             }
         }
 
@@ -40,6 +41,7 @@ namespace BaltaDataAccess
         static void CreateManyCategory(SqlConnection connection)
         {
             var category = new Category();
+            category.Id = Guid.NewGuid();
             category.Title = "Amazon AWS";
             category.Url = "amazon";
             category.Description = "Categoria de serviços do AWS";
@@ -50,6 +52,7 @@ namespace BaltaDataAccess
             //
 
             var category2 = new Category();
+            category2.Id = Guid.NewGuid();
             category2.Title = "Categoria nova";
             category2.Url = "Categoria-nova";
             category2.Description = "Categoria nova";
@@ -62,7 +65,7 @@ namespace BaltaDataAccess
             var insertSql = @"INSERT INTO 
                     [Category] 
                 VALUES(
-                    NEWID(),    
+                    @Id,    
                     @Title,
                     @Url,
                     @Summary, 
@@ -73,6 +76,7 @@ namespace BaltaDataAccess
             var rows = connection.Execute(insertSql, new[]{
                 new
                 {
+                    category.Id,
                     category.Title,
                     category.Url,
                     category.Summary,
@@ -82,6 +86,7 @@ namespace BaltaDataAccess
                 },
                 new
                 {
+                    category.Id,
                     category2.Title,
                     category2.Url,
                     category2.Summary,
@@ -128,6 +133,43 @@ namespace BaltaDataAccess
 
         static void ExecuteScalar(SqlConnection connection)
         {
+            var category = new Category();
+            category.Title = "Amazon AWS";
+            category.Url = "amazon";
+            category.Description = "Categoria de serviços do AWS";
+            category.Order = 8;
+            category.Summary = "AWS Cloud";
+            category.Featured = false;
+
+            // SQL Injection
+
+            var insertSql = @"
+                
+                INSERT INTO 
+                    [Category] 
+                OUTPUT inserted.[Id]
+                VALUES(
+                    NEWID(),    
+                    @Title,
+                    @Url,
+                    @Summary, 
+                    @Order,  
+                    @Description,
+                    @Featured)
+                ";
+
+            var id = connection.ExecuteScalar<Guid>(insertSql,
+                new
+                {
+                    category.Title,
+                    category.Url,
+                    category.Summary,
+                    category.Order,
+                    category.Description,
+                    category.Featured
+                });
+
+            Console.WriteLine($"A categoria inserida foi: {id}");
         }
     }
 }
