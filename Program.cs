@@ -19,7 +19,8 @@ namespace BaltaDataAccess
                 //DeleteCategory(connection);
                 //GetCategory(connection);
                 //ExecuteReadProcedure(connection);
-                ExecuteScalar(connection);
+                //ExecuteScalar(connection);
+                ReadView(connection);
             }
         }
 
@@ -170,6 +171,18 @@ namespace BaltaDataAccess
                 });
 
             Console.WriteLine($"A categoria inserida foi: {id}");
+        }
+
+        static void ReadView(SqlConnection connection)
+        {
+            var sql = "SELECT * FROM [vwCourses]";
+
+            var courses = connection.Query(sql);
+
+            foreach (var item in courses)
+            {
+                Console.WriteLine($"{item.Id} - {item.Title}");
+            }
         }
     }
 }
