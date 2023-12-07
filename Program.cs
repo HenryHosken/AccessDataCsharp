@@ -13,14 +13,15 @@ namespace BaltaDataAccess
 
             using (var connection = new SqlConnection(connectionString))
             {
-                //UpdateCategory(connection);
-                //CreateManyCategory(connection);
-                //ListCategories(connection);
-                //DeleteCategory(connection);
-                //GetCategory(connection);
-                //ExecuteReadProcedure(connection);
-                //ExecuteScalar(connection);
-                ReadView(connection);
+                // UpdateCategory(connection);
+                // CreateManyCategory(connection);
+                // ListCategories(connection);
+                // DeleteCategory(connection);
+                // GetCategory(connection);
+                // ExecuteReadProcedure(connection);
+                // ExecuteScalar(connection);
+                // ReadView(connection);
+                OneToOne(connection);
             }
         }
 
@@ -183,6 +184,31 @@ namespace BaltaDataAccess
             {
                 Console.WriteLine($"{item.Id} - {item.Title}");
             }
+        }
+
+        static void OneToOne(SqlConnection connection)
+        {
+            var sql = @"
+                SELECT 
+                    * 
+                FROM 
+                    [CareerItem] 
+                INNER JOIN 
+                    [Course] ON [CareerItem].[CourseId] = [Course].[Id]";
+
+            var items = connection.Query<CareerItem, Course, CareerItem>(
+                sql,
+                (careerItem, course) =>
+                {
+                    careerItem.Course = course;
+                    return careerItem;
+                }, splitOn: "Id");
+
+            foreach (var item in items)
+            {
+                Console.WriteLine($"{item.Title} - Curso: {item.Course.Title}");
+            }
+
         }
     }
 }
