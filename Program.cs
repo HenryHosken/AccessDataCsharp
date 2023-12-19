@@ -9,7 +9,7 @@ namespace BaltaDataAccess
     {
         static void Main(string[] args)
         {
-            const string connectionString = "Server=localhost, 1433;Database=balta;User ID=sa;Password=H5nry@Hosken!S5norio;Trusted_Connection=False; TrustServerCertificate=True;";
+            const string connectionString = "Server=localhost, 1401;Database=balta;User ID=sa;Password=H5nry@Hosken@S5norio;Trusted_Connection=False; TrustServerCertificate=True;";
 
             using (var connection = new SqlConnection(connectionString))
             {
@@ -21,7 +21,8 @@ namespace BaltaDataAccess
                 // ExecuteReadProcedure(connection);
                 // ExecuteScalar(connection);
                 // ReadView(connection);
-                OneToOne(connection);
+                //OneToOne(connection);
+                OneToMany(connection);
             }
         }
 
@@ -208,7 +209,55 @@ namespace BaltaDataAccess
             {
                 Console.WriteLine($"{item.Title} - Curso: {item.Course.Title}");
             }
-
         }
+
+        static void OneToMany(SqlConnection connection)
+        {
+            var sql = @"
+                    SELECT
+                        [Career].[Id],
+                        [Career].[Title],
+                        [CareerItem].[CareerId] AS [Id],
+                        [CareerItem].[CareerId]
+                    FROM
+                        [Career]
+                    INNER JOIN  
+                        [CareerItem] ON [CareerItem].[CareerId] = [Career].[Id]
+                    ORDER BY 
+                        [Career].[Title]
+            ";
+            var careers = new List<Career>();
+            var items = connection.Query<Career, CareerItem, Career>(
+                sql,
+                (career, item) =>
+                {
+                    var car = careers.Where(x => x.Id == career.Id).FirstOrDefault();
+                    if (car != null)
+                    {
+                        car = career;
+                        car.Items.Add(item);
+                        careers.Add(car);
+                    }
+                    else
+                    {
+
+                    }
+
+
+                    career.Items.Add( item );
+                    return career;
+                }, splitOn: "CareerId");
+
+            foreach (var career in careers)
+            {
+                Console.WriteLine($"{career.Title}");
+                foreach (var item in career.Items)
+                {
+                    Console.WriteLine($" - {item.Title}");
+                }
+            }
+        }
+
+
     }
 }
