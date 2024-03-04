@@ -21,8 +21,12 @@ namespace BaltaDataAccess
                 // ExecuteReadProcedure(connection);
                 // ExecuteScalar(connection);
                 // ReadView(connection);
-                //OneToOne(connection);
-                OneToMany(connection);
+                // OneToOne(connection);
+                // OneToMany(connection);
+                // QueryMultiple(connection);
+                // SelectIn(connection);
+                // Like(connection, "api");
+                Transaction(connection);
             }
         }
 
@@ -217,8 +221,8 @@ namespace BaltaDataAccess
                     SELECT
                         [Career].[Id],
                         [Career].[Title],
-                        [CareerItem].[CareerId] AS [Id],
-                        [CareerItem].[CareerId]
+                        [CareerItem].[CareerId],
+                        [CareerItem].[Title]
                     FROM
                         [Career]
                     INNER JOIN  
@@ -232,7 +236,7 @@ namespace BaltaDataAccess
                 (career, item) =>
                 {
                     var car = careers.Where(x => x.Id == career.Id).FirstOrDefault();
-                    if (car != null)
+                    if (car == null)
                     {
                         car = career;
                         car.Items.Add(item);
@@ -240,13 +244,13 @@ namespace BaltaDataAccess
                     }
                     else
                     {
-
+                        car.Items.Add(item);
                     }
-
-
-                    career.Items.Add( item );
                     return career;
+
                 }, splitOn: "CareerId");
+
+
 
             foreach (var career in careers)
             {
@@ -258,6 +262,114 @@ namespace BaltaDataAccess
             }
         }
 
+        static void QueryMultiple(SqlConnection connection)
+        {
+            var query = "SELECT * FROM [Category]; SELECT * FROM [Course]";
 
+            using (var multi = connection.QueryMultiple(query))
+            {
+                var categories = multi.Read<Category>();
+                var courses = multi.Read<Course>();
+
+                foreach (var item in categories)
+                {
+                    Console.WriteLine(item.Title);
+                }
+
+                Console.WriteLine("-------------------");
+
+                foreach (var item in courses)
+                {
+                    Console.WriteLine(item.Title);
+                }
+            }
+        }
+
+        static void SelectIn(SqlConnection connection)
+        {
+            var query = @"select * from Career where [Id] IN @Id";
+
+            var items = connection.Query<Career>(query, new
+            {
+                Id = new[]
+                {
+                    "4327ac7e-963b-4893-9f31-9a3b28a4e72b",
+                    "e6730d1c-6870-4df3-ae68-438624e04c72"
+                }
+            });
+
+            foreach (var item in items)
+            {
+                Console.WriteLine(item.Title);
+            }
+        }
+
+        static void Like(SqlConnection connection, string term)
+        {
+
+            var query = @"SELECT * FROM [Course] WHERE [Title] LIKE @exp";
+
+            var items = connection.Query<Course>(query, new
+            {
+                exp = $"%{term}%"
+            });
+
+            foreach (var item in items)
+            {
+                Console.WriteLine(item.Title);
+            }
+
+            Console.WriteLine("");
+
+            foreach (var item in items)
+            {
+                Console.WriteLine(item.Id);
+            }
+
+        }
+
+        static void Transaction(SqlConnection connection)
+        {
+            var category = new Category();
+            category.Id = Guid.NewGuid();
+            category.Title = "Minha categoria teste";
+            category.Url = "amazon";
+            category.Description = "Categoria de serviços do AWS";
+            category.Order = 8;
+            category.Summary = "AWS Cloud";
+            category.Featured = false;
+
+            var insertSql = @"INSERT INTO 
+                    [Category] 
+                VALUES(
+                    @Id,    
+                    @Title,
+                    @Url,
+                    @Summary, 
+                    @Order,  
+                    @Description,
+                    @Featured)";
+            connection.Open();
+            
+            using (var transaction = connection.BeginTransaction())
+            {
+                var rows = connection.Execute(insertSql, new
+                {
+                    category.Id,
+                    category.Title,
+                    category.Url,
+                    category.Summary,
+                    category.Order,
+                    category.Description,
+                    category.Featured
+                }, transaction);
+
+                //transaction.Commit();
+                transaction.Rollback();
+
+                Console.WriteLine($"{rows} linhas inseridas");
+            }
+            
+        }
     }
 }
